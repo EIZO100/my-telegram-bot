@@ -26,3 +26,5 @@ def analyze_user_style(history):
         f"حلل أسلوب الكتابة بإيجاز:\n{messages_text}"
     )
     return response.text
+with open("prompt.txt", "r", encoding="utf-8") as f:
+    SYSTEM_PROMPT = f.read()
