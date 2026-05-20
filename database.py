@@ -1,5 +1,6 @@
 import sqlite3
 from datetime import datetime
+import json
 
 def init_db():
     conn = sqlite3.connect("bot_data.db")
@@ -17,6 +18,15 @@ def init_db():
         CREATE TABLE IF NOT EXISTS user_styles (
             user_id INTEGER PRIMARY KEY,
             style_notes TEXT
+        )
+    """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS search_results (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            query TEXT,
+            results TEXT,
+            timestamp TEXT
         )
     """)
     conn.commit()
@@ -62,3 +72,25 @@ def get_user_style(user_id):
     row = c.fetchone()
     conn.close()
     return row[0] if row else ""
+
+def save_search_result(user_id, query, results):
+    conn = sqlite3.connect("bot_data.db")
+    c = conn.cursor()
+    c.execute("""
+        INSERT INTO search_results (user_id, query, results, timestamp)
+        VALUES (?, ?, ?, ?)
+    """, (user_id, query, json.dumps(results), datetime.now().isoformat()))
+    conn.commit()
+    conn.close()
+
+def get_search_history(user_id, limit=5):
+    conn = sqlite3.connect("bot_data.db")
+    c = conn.cursor()
+    c.execute("""
+        SELECT query, results, timestamp FROM search_results
+        WHERE user_id = ?
+        ORDER BY timestamp DESC LIMIT ?
+    """, (user_id, limit))
+    rows = c.fetchall()
+    conn.close()
+    return [(q, json.loads(r), t) for q, r, t in rows]
